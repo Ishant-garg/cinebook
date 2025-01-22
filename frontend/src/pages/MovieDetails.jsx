@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { useParams } from "react-router-dom";
 import { useState } from "react";
-import { toast } from "sonner";
+// import { toast } from "sonner";
 import { Search } from "lucide-react";
 import TheatreList from "../components/TheatreList";
 import YouTube from "react-youtube";
@@ -11,14 +11,16 @@ import YouTube from "react-youtube";
 const movieDetails = {
   id: "1",
   title: "RAMAYANA - THE LEGEND OF PRINCE RAMA",
-  imageUrl: "https://originserver-static1-uat.pvrcinemas.com/pvrcms/movie_v/31297_4l9UDogd.jpg",
+  imageUrl:
+    "https://originserver-static1-uat.pvrcinemas.com/pvrcms/movie_v/31297_4l9UDogd.jpg",
   duration: "2h 18m",
   releaseDate: "Friday, Jan 24, 2025",
   languages: ["Hindi"],
   genres: ["Adventure", "Anime", "Drama"],
-  description: "In Ayodhya, the royal palace of Kosala Kingdom in Ancient India, four princes were born to three queens, each of whom grew to great stature. Banished for 14 years due to court intrigue, Prince Rama retreated to the forest with his beautiful wife Sita. When Rama vanquishes the demons of the forest, he invites the wrath of the demon king Ravana, who kidnaps Sita. Based on the Indian epic the Ramayana.",
+  description:
+    "In Ayodhya, the royal palace of Kosala Kingdom in Ancient India, four princes were born to three queens, each of whom grew to great stature. Banished for 14 years due to court intrigue, Prince Rama retreated to the forest with his beautiful wife Sita. When Rama vanquishes the demons of the forest, he invites the wrath of the demon king Ravana, who kidnaps Sita. Based on the Indian epic the Ramayana.",
   certification: "U",
-  trailerVideoId: "QPkdkknzUkQ"
+  trailerVideoId: "QPkdkknzUkQ",
 };
 
 const MovieDetails = () => {
@@ -29,8 +31,21 @@ const MovieDetails = () => {
   return (
     <Layout>
       {/* Hero Section */}
-      <div className="relative min-h-[60vh] bg-gradient-to-b from-transparent to-background">
-        <div className="absolute inset-0 bg-black/60" />
+
+      <div
+        className="relative min-h-[60vh] bg-cover bg-center"
+        style={{
+          backgroundImage: `url(${movieDetails.imageUrl})`,
+          backgroundPosition: "center",
+          backgroundSize: "cover",
+        }}
+      >
+        {/* Blurred overlay */}
+        <div
+          className="absolute inset-0 bg-black/70"
+          style={{ backdropFilter: "blur(99px)" }}
+        />
+
         <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="grid md:grid-cols-[300px,1fr] gap-8 items-start">
             {/* Movie Poster */}
@@ -57,7 +72,9 @@ const MovieDetails = () => {
             <div className="space-y-6 text-white">
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-1 text-xs border rounded">{movieDetails.certification}</span>
+                  <span className="px-2 py-1 text-xs border rounded">
+                    {movieDetails.certification}
+                  </span>
                   <span className="text-sm">•</span>
                   <span>{movieDetails.duration}</span>
                   <span className="text-sm">•</span>
@@ -70,8 +87,13 @@ const MovieDetails = () => {
                   {movieDetails.languages.join(", ")}
                 </div>
               </div>
-              <p className="text-lg text-gray-200 max-w-3xl">{movieDetails.description}</p>
-              <Button variant="default" className="bg-orange-500 hover:bg-orange-600">
+              <p className="text-lg text-gray-200 max-w-3xl">
+                {movieDetails.description}
+              </p>
+              <Button
+                variant="default"
+                className="bg-cinema-red hover:bg-red-700"
+              >
                 Book Tickets
               </Button>
             </div>
@@ -98,7 +120,7 @@ const MovieDetails = () => {
                 // height: "100%",
                 playerVars: {
                   autoplay: 1,
-                }
+                },
               }}
             />
           </div>
@@ -141,7 +163,8 @@ const MovieDetails = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <span className="h-3 w-3 rounded-full bg-green-500" /> Available
-              <span className="h-3 w-3 rounded-full bg-yellow-500" /> Filling Fast
+              <span className="h-3 w-3 rounded-full bg-yellow-500" /> Filling
+              Fast
               <span className="h-3 w-3 rounded-full bg-red-500" /> Sold Out
               <span className="h-3 w-3 rounded-full bg-gray-500" /> Lapsed
             </div>
