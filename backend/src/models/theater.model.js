@@ -24,7 +24,11 @@ const showSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  seats: [{
+  endTime: {
+    type: Date,
+    required: true,
+  },
+  seats: [{ 
     seat: seatSchema,
     status: {
       type: String,
