@@ -36,19 +36,26 @@ const showSchema = new mongoose.Schema({
   }]
 });
 const theaterSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  location: {
-    type: String,
-    required: true,
-  },
-  totalSeats: {
-    type: Number,
-    required: true,
-  },
-  shows: [showSchema]
-});
+    name: {
+      type: String,
+      required: true,
+    },
+    location: {
+      type: String,
+      required: true,
+    },
+    totalSeats: {
+      type: Number,
+      required: true,
+    },
+    movies: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Movie',
+      },
+    ],
+    shows: [showSchema], // Shows already link specific movies to time slots
+  });
+  
 const Theater = mongoose.model('Theater', theaterSchema);
 export default Theater;
