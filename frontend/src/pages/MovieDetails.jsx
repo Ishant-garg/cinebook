@@ -1,54 +1,56 @@
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { useParams } from "react-router-dom";
-import { useState } from "react";
-// import { toast } from "sonner";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import TheatreList from "../components/TheatreList";
 import YouTube from "react-youtube";
-
-// Mock data - replace with API call later
-const movieDetails = {
-  id: "1",
-  title: "RAMAYANA - THE LEGEND OF PRINCE RAMA",
-  imageUrl:
-    "https://originserver-static1-uat.pvrcinemas.com/pvrcms/movie_v/31297_4l9UDogd.jpg",
-  duration: "2h 18m",
-  releaseDate: "Friday, Jan 24, 2025",
-  languages: ["Hindi"],
-  genres: ["Adventure", "Anime", "Drama"],
-  description:
-    "In Ayodhya, the royal palace of Kosala Kingdom in Ancient India, four princes were born to three queens, each of whom grew to great stature. Banished for 14 years due to court intrigue, Prince Rama retreated to the forest with his beautiful wife Sita. When Rama vanquishes the demons of the forest, he invites the wrath of the demon king Ravana, who kidnaps Sita. Based on the Indian epic the Ramayana.",
-  certification: "U",
-  trailerVideoId: "QPkdkknzUkQ",
-};
+import useMovieStore from  "../store/useMovieStore";
 
 const MovieDetails = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // Get movie ID from URL parameters
+  const { movieDetails, isLoading, fetchMovieDetails } = useMovieStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [showTrailer, setShowTrailer] = useState(false);
+    console.log(id);
+  useEffect(() => {
+    if (id) {
+      fetchMovieDetails(id); // Fetch movie details when the page loads
+    }
+  }, [id, fetchMovieDetails]);
+  // console.log(movieDetails.movie);
+  if(isLoading){
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-cinema-red"></div>
+        </div>
+      </Layout>
+    )
+  }
+
+  if (!movieDetails || Object.keys(movieDetails).length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span>No movie details found.</span> {/* Show a message if movie details are missing */}
+      </div>
+    );
+  }
 
   return (
     <Layout>
       {/* Hero Section */}
-
       <div
-        className="relative min-h-[60vh] bg-cover bg-center"
+        className="relative rounded-lg min-h-[60vh]   bg-cover bg-center"
         style={{
           backgroundImage: `url(${movieDetails.imageUrl})`,
           backgroundPosition: "center",
           backgroundSize: "cover",
         }}
       >
-        {/* Blurred overlay */}
-        <div
-          className="absolute inset-0 bg-black/70"
-          style={{ backdropFilter: "blur(99px)" }}
-        />
-
+        <div className="absolute inset-0 bg-black/70  "  style={{ backdropFilter: "blur(50px)" }} />
         <div className="container mx-auto px-4 py-8 relative z-10">
           <div className="grid md:grid-cols-[300px,1fr] gap-8 items-start">
-            {/* Movie Poster */}
             <div className="relative aspect-[2/3] overflow-hidden rounded-lg">
               <img
                 src={movieDetails.imageUrl}
@@ -87,13 +89,8 @@ const MovieDetails = () => {
                   {movieDetails.languages.join(", ")}
                 </div>
               </div>
-              <p className="text-lg text-gray-200 max-w-3xl">
-                {movieDetails.description}
-              </p>
-              <Button
-                variant="default"
-                className="bg-cinema-red hover:bg-red-700"
-              >
+              <p className="text-lg text-gray-200 max-w-3xl">{movieDetails.description}</p>
+              <Button variant="default" className="bg-cinema-red hover:bg-red-700">
                 Book Tickets
               </Button>
             </div>
@@ -117,7 +114,6 @@ const MovieDetails = () => {
               videoId={movieDetails.trailerVideoId}
               opts={{
                 width: "100%",
-                // height: "100%",
                 playerVars: {
                   autoplay: 1,
                 },
@@ -136,7 +132,7 @@ const MovieDetails = () => {
             <input
               type="text"
               placeholder="Search for cinema"
-              className="w-full max-w-md pl-10 pr-4 py-2 rounded-lg bg-white/5 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full max-w-md pl-10 pr-4 py-2 rouded-lg  bg-white/5 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

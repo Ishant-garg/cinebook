@@ -5,7 +5,8 @@ import {
   deleteShow,
   getShowById,
   getShowsByTheater,
-  getShowsByMovie
+  getShowsByMovie,
+  getShowsByCriteria
 } from '../controllers/show.controllers.js';
 
 const router = express.Router();
@@ -27,5 +28,7 @@ router.get('/theater/:theaterId/shows', getShowsByTheater);
 
 // Get all shows for a movie
 router.get('/theater/shows/movie/:movieId', getShowsByMovie);
+
+router.get('/shows' , getShowsByCriteria);
 
 export default router;

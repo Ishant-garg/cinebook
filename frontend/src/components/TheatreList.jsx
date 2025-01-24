@@ -1,78 +1,118 @@
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import { useState } from "react";
-import { Card } from "./ui/card";
-import { useNavigate } from "react-router-dom";
-import useStore from "../store/useStore";
-
-const theatres = [
-  {
-    id: "1",
-    name: "Cinema City",
-    location: "Downtown",
-    showTimes: ["10:00 AM", "2:00 PM", "6:00 PM", "9:00 PM"],
-  },
-  {
-    id: "2",
-    name: "Starlight Theatre",
-    location: "West End",
-    showTimes: ["11:00 AM", "3:00 PM", "7:00 PM", "10:00 PM"],
-  },
-];
+import { Accordion, AccordionItem } from "./ui/accordion"; // Use an accordion component
+import useTheaterStore from  "../store/useTheaterStore";
+import { AccordionContent, AccordionTrigger } from "@radix-ui/react-accordion";
+import { MinusCircleIcon, MinusIcon, MinusSquareIcon, PlusCircleIcon, PlusIcon } from "lucide-react";
 
 const TheatreList = ({ movieId }) => {
-  const navigate = useNavigate();
-  const [selectedTheatre, setSelectedTheatre] = useState(null);
-  const [selectedShowtime, setSelectedShowtime] = useState(null);
-  
-  const setStoreTheatre = useStore((state) => state.setSelectedTheatre);
-  const setStoreShowtime = useStore((state) => state.setSelectedShowtime);
+  const {
+    theaters,
+    showsByTheater,
+    selectedDate,
+    isLoading,
+    fetchTheatersByDate,
+    fetchShowsByTheater,
+    setSelectedDate,
+  } = useTheaterStore();
+ 
+  // Calculate the next 3 dates (today and next 2 days)
+  const dates = Array.from({ length: 3 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() + i);
+    return date;
+  });
 
-  const handleShowtimeSelect = (theatreId, showtime) => {
-    setSelectedTheatre(theatreId);
-    setSelectedShowtime(showtime);
+ // Fetch theaters when the selected date or movieId changes
+useEffect(() => {
+  
+    fetchTheatersByDate(selectedDate.toISOString().split("T")[0] ,  movieId ); // Pass both date and movieId
+    console.log(theaters);
+}, [selectedDate ]);
+
+  const handleAccordionClick = (theaterId) => {
+    // Fetch shows for the theater if not already fetched
     
-    const theatre = theatres.find(t => t.id === theatreId);
-    setStoreTheatre(theatre);
-    setStoreShowtime(showtime);
+    fetchShowsByTheater(theaterId, selectedDate.toISOString().split("T")[0]);
     
-    navigate(`/movie/${movieId}/booking`);
+    console.log(theaterId , showsByTheater );
   };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold mb-4">Select Theatre & Showtime</h2>
-      <div className="grid gap-4">
-        {theatres.map((theatre) => (
-          <Card key={theatre.id} className="p-4 bg-cinema-gray">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h3 className="text-xl font-semibold">{theatre.name}</h3>
-                <p className="text-gray-400">{theatre.location}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {theatre.showTimes.map((time) => (
-                  <Button
-                    key={`${theatre.id}-${time}`}
-                    variant={
-                      selectedTheatre === theatre.id && selectedShowtime === time
-                        ? "default"
-                        : "outline"
-                    }
-                    className={
-                      selectedTheatre === theatre.id && selectedShowtime === time
-                        ? "bg-cinema-red hover:bg-red-700"
-                        : "hover:bg-cinema-red/10"
-                    }
-                    onClick={() => handleShowtimeSelect(theatre.id, time)}
-                  >
-                    {time}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </Card>
+      <h2 className="text-2xl font-bold mb-4">Select Date and Theatre</h2>
+
+      {/* Date Selector */}
+      <div className="flex space-x-4 mb-4">
+        {dates.map((date) => (
+          <Button
+            key={date.toISOString()}
+            onClick={() => setSelectedDate(date)}
+            variant={selectedDate.toDateString() === date.toDateString() ? "default" : "outline"}
+          >
+            {date.toLocaleDateString("en-US", { weekday: "short", day: "numeric" })}
+          </Button>
         ))}
       </div>
+
+   
+      {/* Theater Accordion */}
+    
+     
+ 
+<Accordion type="single" collapsible className="w-full bg-transparent  ">
+  {theaters.length === 0 && (
+    <p className="text-gray-400 text-center py-4">No theaters found for the selected date.</p>
+  )}
+  {theaters.map((theater) => (
+    <AccordionItem
+      key={theater._id}
+      value={theater._id}
+      className="border-b last:border-none mb-2"
+    >
+      <AccordionTrigger className="flex justify-between items-center w-full  py-4 px-6 rounded-lg bg-white/5 hover:bg-white/10 transition-all">
+        <div className="text-gray-200 font-medium">
+          {`${theater.name}, ${theater.location}`}
+        </div>
+        {/* Render dynamic icon */}
+        {showsByTheater[theater._id] ? (
+          <MinusSquareIcon className="w-5 h-5 text-gray-200" />
+        ) : (
+          <PlusIcon className="w-5 h-5 text-gray-200" />
+        )}
+      </AccordionTrigger>
+      <AccordionContent className="px-6 py-4 bg-black/15 mt-1 rounded-lg rounded-b-lg">
+        {showsByTheater[theater._id] ? (
+          showsByTheater[theater._id]
+            .sort((a, b) => new Date(a.showTime) - new Date(b.showTime))
+            .map((show) => (
+              <div
+                key={show._id}
+                className="flex justify-between items-center py-2 border-b last:border-none"
+              >
+                <span className="text-gray-300">
+                  {new Date(show.showTime).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+                <Button
+                  variant="outline"
+                  className="text-cinema-light border-cinema-red hover:bg-cinema-red "
+                >
+                  Book
+                </Button>
+              </div>
+            ))
+        ) : (
+          <p className="text-gray-400">Loading shows...</p>
+        )}
+      </AccordionContent>
+    </AccordionItem>
+  ))}
+</Accordion> 
+
+
     </div>
   );
 };

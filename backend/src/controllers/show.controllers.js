@@ -11,8 +11,8 @@ export const createShow = async (req, res) => {
     if (!theater) {
       return res.status(404).json({ message: "Theater not found" });
     }
-    const totalRows = 10; // Example: 10 rows
-    const seatsPerRow = 20; // Example: 20 seats per row
+    const totalRows = 2; // Example: 10 rows
+    const seatsPerRow = 5; // Example: 20 seats per row
     const seatTypeDistribution = {
       A: "vip",
       B: "vip",
@@ -22,8 +22,7 @@ export const createShow = async (req, res) => {
       F: "standard",
       G: "standard",
       H: "standard",
-      I: "standard",
-      J: "standard",
+     
     };
 
     // Generate the seat array
@@ -230,7 +229,7 @@ export const getShowsByMovie = async (req, res) => {
 // helpers/seatHelper.js
 export function generateSeats(totalRows, seatsPerRow, seatTypeDistribution) {
     const seats = [];
-    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const alphabet = "ABCDEFGH";
   
     for (let rowIndex = 0; rowIndex < totalRows; rowIndex++) {
       const row = alphabet[rowIndex];
@@ -248,4 +247,43 @@ export function generateSeats(totalRows, seatsPerRow, seatTypeDistribution) {
   
     return seats;
   }
+  
+
+ export const getShowsByCriteria = async (req, res) => {
+    try {
+      const { theaterId, movieId, date } = req.query;
+  
+      // Validate required parameters
+      if (!theaterId || !movieId || !date) {
+        return res.status(400).json({ error: "Theater ID, movie ID, and date are required." });
+      }
+  
+      // Convert the date string to a Date object and extract start/end of the day
+      const startOfDay = new Date(date);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+  
+      // Find the theater by ID and filter shows matching the movieId and showTime range
+      const theater = await Theater.findOne(
+        {
+          _id: theaterId,
+          "shows.movieId": movieId,
+          "shows.showTime": { $gte: startOfDay, $lte: endOfDay },
+        },
+        {
+          "shows.$": 1, // Only include the matching show in the result
+        }
+      );
+  
+      if (!theater || !theater.shows || theater.shows.length === 0) {
+        return res.status(404).json({ error: "No shows found for the given criteria." });
+      }
+  
+      res.status(200).json({ shows: theater.shows });
+    } catch (error) {
+      console.error("Error fetching shows:", error);
+      res.status(500).json({ error: "An error occurred while fetching shows." });
+    }
+  };
   

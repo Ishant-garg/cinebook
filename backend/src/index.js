@@ -7,6 +7,7 @@ import theaterRoute from './routes/theaterRoute.js'
 import showRoute from './routes/showRoute.js'
 dotenv.config()
 import cors from 'cors'
+import { getTheatersByDateAndMovie } from './controllers/theater.controllers.js'
 const app = express()
 const port = 3000
 const allowedOrigins = [
@@ -40,6 +41,7 @@ app.use("/api/auth" , authRoute );
 app.use("/api/movie" , movieRoute ); 
 app.use("/api/theater" , theaterRoute );
 app.use("/api" , showRoute);
+app.get("/api/theaters" , getTheatersByDateAndMovie)
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
   connectDB();

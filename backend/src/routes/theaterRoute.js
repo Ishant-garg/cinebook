@@ -6,6 +6,8 @@ import {
   updateTheater,
   deleteTheater,
   getTheatersByMovie,
+//   getTheatersByDate,
+  getTheatersByDateAndMovie,
 } from  "../controllers/theater.controllers.js";
 import {protectRoute} from  "../middlewares/auth.middleware.js";
 import isAdmin from  "../middlewares/isAdmin.middleware.js";
@@ -29,5 +31,6 @@ router.delete("/:id", protectRoute, isAdmin, deleteTheater);
 
 // Get all theaters showing a specific movie
 router.get("/movie/:movieId", getTheatersByMovie);
+ 
 
 export default router;

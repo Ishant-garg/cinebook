@@ -2,7 +2,7 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 
-export const MovieCard = ({ id, title, imageUrl, rating, genre }) => {
+export const MovieCard = ({ _id, title, imageUrl, rating, genre }) => {
   const navigate = useNavigate();
  
   return (
@@ -21,7 +21,7 @@ export const MovieCard = ({ id, title, imageUrl, rating, genre }) => {
               {genre} • ⭐ {rating}
             </p>
             <Button
-              onClick={() => navigate(`/movie/${id}`)}
+              onClick={() => navigate(`/movie/${_id}`)}
               className="w-full bg-cinema-red hover:bg-red-700 text-white"
             >
               Book Now
