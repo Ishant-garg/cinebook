@@ -5,7 +5,7 @@ export const createShow = async (req, res) => {
      
   try {
     const { theaterId } = req.params;
- 
+   
     const { movieId, showTime, endTime, seatPricing } = req.body;
     const theater = await Theater.findById(theaterId);
     if (!theater) {
@@ -44,7 +44,7 @@ export const createShow = async (req, res) => {
       show: theater.shows[theater.shows.length - 1] 
     });
   } catch (error) {
-    // console.log(error);
+    console.log(error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -287,3 +287,132 @@ export function generateSeats(totalRows, seatsPerRow, seatTypeDistribution) {
     }
   };
   
+  export const getSeatsByShow = async (req, res) => {
+    const { id } = req.params;
+ 
+    try {
+      const show = await Show.findById(id).populate('seats');
+      console.log(show);
+      res.status(200).json(show.seats); // Return the seat data for this show
+    } catch (error) {
+      res.status(500).json({ message: 'Error fetching seats', error });
+    }
+  }
+
+ 
+
+// Get show details
+export const getShowDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(id);
+    // return res.status(200).json({ message: 'Show details' });
+    const theater = await Theater.findOne({
+      'shows._id': id
+    }).populate('movies');
+    
+    if (!theater) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    const show = theater.shows.id(id);
+    if (!show) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    const movie = theater.movies.find(m => m._id.equals(show.movieId));
+
+    res.json({
+      id: show._id,
+      movieTitle: movie ? movie.title : 'Unknown Movie',
+      theaterName: theater.name,
+      showTime: show.showTime,
+      seats: show.seats
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Lock seats
+export const lockSeats = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { seatIds } = req.body;
+    
+    const theater = await Theater.findOne({
+      'shows._id': id
+    });
+
+    if (!theater) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    const show = theater.shows.id(id);
+    if (!show) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    // Check if seats are available
+    const requestedSeats = show.seats.filter(seat => seatIds.includes(seat._id.toString()));
+    const unavailableSeats = requestedSeats.filter(seat => 
+      seat.status !== 'available' && 
+      !(seat.status === 'locked' && seat.lockedUntil < new Date())
+    );
+
+    if (unavailableSeats.length > 0) {
+      return res.status(400).json({ message: 'One or more seats are not available' });
+    }
+
+    // Lock the seats for 10 seconds
+    const lockExpiry = new Date(Date.now() + 10000); // 10 seconds from now
+    requestedSeats.forEach(seat => {
+      seat.status = 'locked';
+      seat.lockedAt = new Date();
+      seat.lockedUntil = lockExpiry;
+    });
+
+    await theater.save();
+    res.json({ message: 'Seats locked successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Release seats
+export const releaseSeats =  async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { seatIds } = req.body;
+    
+    const theater = await Theater.findOne({
+      'shows._id': id
+    });
+
+    if (!theater) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    const show = theater.shows.id(id);
+    if (!show) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    // Release the seats
+    show.seats.forEach(seat => {
+      if (seatIds.includes(seat._id.toString())) {
+        seat.status = 'available';
+        seat.lockedAt = null;
+        seat.lockedUntil = null;
+      }
+    });
+
+    await theater.save();
+    res.json({ message: 'Seats released successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

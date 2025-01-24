@@ -1,23 +1,22 @@
 import mongoose from "mongoose";
+
+// Define the seat schema
 const seatSchema = new mongoose.Schema({
-  seatNumber: {
+  status: {
     type: String,
-    required: true,
+    enum: ['available', 'locked', 'booked'],
+    default: 'available'
   },
-  type: {
-    type: String,
-    enum: ['standard', 'premium', 'vip'],
-    default: 'standard'
-  },
-  price: {
-    type: Number,
-    required: true,
-  }
+  lockedAt: Date,
+  lockedUntil: Date,
+  lockedBy: String // Add userId for tracking
 });
+
+// Define the show schema
 const showSchema = new mongoose.Schema({
   movieId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Movie',
+    ref: "Movie",
     required: true,
   },
   showTime: {
@@ -28,38 +27,49 @@ const showSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  seats: [{ 
-    seat: seatSchema,
-    status: {
-      type: String,
-      enum: ['available', 'locked', 'booked'],
-      default: 'available'
-    },
-    lockedAt: Date,
-    lockedBy: String
-  }]
+  seats: [seatSchema], // Embed the seat schema here
 });
+
+// Middleware to clean up expired locks
+showSchema.pre("save", function (next) {
+  const currentTime = new Date();
+  if (this.seats) {
+    this.seats.forEach((seat) => {
+      if (seat.status === "locked" && seat.lockedUntil && seat.lockedUntil < currentTime) {
+        seat.status = "available";
+        seat.lockedAt = null;
+        seat.lockedUntil = null;
+        seat.lockedBy = null;
+      }
+    });
+  }
+  next();
+});
+
+// Define the theater schema
 const theaterSchema = new mongoose.Schema({
-    name: {
-      type: String,
-      required: true,
+  name: {
+    type: String,
+    required: true,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
+  totalSeats: {
+    type: Number,
+    required: true,
+  },
+  movies: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Movie",
     },
-    location: {
-      type: String,
-      required: true,
-    },
-    totalSeats: {
-      type: Number,
-      required: true,
-    },
-    movies: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Movie',
-      },
-    ],
-    shows: [showSchema], // Shows already link specific movies to time slots
-  });
-  
-const Theater = mongoose.model('Theater', theaterSchema);
+  ],
+  shows: [showSchema], // Shows already link specific movies to time slots
+});
+
+// Create the model
+const Theater = mongoose.model("Theater", theaterSchema);
+
 export default Theater;

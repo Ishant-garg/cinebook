@@ -3,7 +3,8 @@ import { Button } from "./ui/button";
 import { Accordion, AccordionItem } from "./ui/accordion"; // Use an accordion component
 import useTheaterStore from  "../store/useTheaterStore";
 import { AccordionContent, AccordionTrigger } from "@radix-ui/react-accordion";
-import { MinusCircleIcon, MinusIcon, MinusSquareIcon, PlusCircleIcon, PlusIcon } from "lucide-react";
+import { MinusCircleIcon, MinusIcon, MinusSquareIcon, Plus, PlusCircleIcon, PlusIcon, X } from "lucide-react";
+import { Navigate, useNavigate } from "react-router-dom";
 
 const TheatreList = ({ movieId }) => {
   const {
@@ -15,7 +16,7 @@ const TheatreList = ({ movieId }) => {
     fetchShowsByTheater,
     setSelectedDate,
   } = useTheaterStore();
- 
+  const navigate = useNavigate();
   // Calculate the next 3 dates (today and next 2 days)
   const dates = Array.from({ length: 3 }, (_, i) => {
     const date = new Date();
@@ -37,6 +38,11 @@ useEffect(() => {
     
     console.log(theaterId , showsByTheater );
   };
+  const handleShowClick = (showId) => { 
+    console.log(showId);
+    navigate(`/seat-selection/${showId}`);
+    // Navigate(`/seat-selection/${showId}`);
+  }
 
   return (
     <div className="space-y-4">
@@ -76,7 +82,7 @@ useEffect(() => {
         </div>
         {/* Render dynamic icon */}
         {showsByTheater[theater._id] ? (
-          <MinusSquareIcon className="w-5 h-5 text-gray-200" />
+          <Plus className="w-5 h-5 text-gray-200" />
         ) : (
           <PlusIcon className="w-5 h-5 text-gray-200" />
         )}
@@ -99,6 +105,7 @@ useEffect(() => {
                 <Button
                   variant="outline"
                   className="text-cinema-light border-cinema-red hover:bg-cinema-red "
+                  onClick={() => handleShowClick(show._id)}
                 >
                   Book
                 </Button>

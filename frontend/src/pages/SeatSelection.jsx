@@ -2,28 +2,46 @@ import { Layout } from "@/components/Layout";
 import { SeatMap } from "@/components/SeatMap";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
-import useStore from "../store/useStore";
+import useShowStore from "../store/useShowStore";
 
 const SeatSelection = () => {
-  const { id } = useParams();
+  const { id: showId } = useParams();
   const navigate = useNavigate();
-  const [selectedSeats, setSelectedSeats] = useState([]);
-  const setStoreSelectedSeats = useStore((state) => state.setSelectedSeats);
+  const { 
+    showDetails,
+    selectedSeats,
+    fetchShowDetails,
+    clearSelection,
+  } = useShowStore();
 
-  const handleSeatSelect = (seats) => {
-    setSelectedSeats(seats);
-    setStoreSelectedSeats(seats); // Update Zustand store as well
-  };
+  useEffect(() => {
+    fetchShowDetails(showId);
+    
+    // Cleanup: release selected seats when leaving
+    return () => {
+      clearSelection();
+    };
+  }, [showId]);
 
   const handleProceed = () => {
     if (selectedSeats.length === 0) {
       return;
     }
     // Handle payment navigation here
-    console.log("Proceeding with seats:", selectedSeats);
+    navigate(`/payment/${showId}`);
   };
+
+  if (!showDetails) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cinema-red"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -46,10 +64,17 @@ const SeatSelection = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
-            <SeatMap onSelectSeats={handleSeatSelect} />
+            <SeatMap showId={showId} />
           </div>
           <div className="bg-cinema-gray rounded-lg p-6">
             <h2 className="text-2xl font-bold mb-4">Booking Summary</h2>
+            {showDetails && (
+              <div className="mb-4 pb-4 border-b border-gray-700">
+                <h3 className="font-semibold text-cinema-red">{showDetails.movieTitle}</h3>
+                <p className="text-gray-400">{new Date(showDetails.showTime).toLocaleString()}</p>
+                <p className="text-gray-400">{showDetails.theaterName}</p>
+              </div>
+            )}
             <div className="space-y-4">
               <div className="pb-4 border-b border-gray-700">
                 <h3 className="font-semibold mb-2">Selected Seats</h3>

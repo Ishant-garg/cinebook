@@ -20,6 +20,7 @@ const useTheaterStore = create((set) => ({
         acc[theater._id] = theater.shows || []; // Add shows for each theater
         return acc;
       }, {});
+      console.log(showsByTheater);
       set({ theaters, showsByTheater, isLoading: false });
     } catch (error) {
       set({ isLoading: false, error: error.message });
