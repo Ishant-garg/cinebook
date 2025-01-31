@@ -1,14 +1,23 @@
-import React from "react";
+ 
 import { Button } from "@/components/ui/button";
 import { UserCircle, Film, LogOut, Mail, Edit2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Layout } from "@/components/Layout";
 import { Separator } from "@/components/ui/separator";
+import { useAuthStore } from "../store/useAuthStore";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
+  const {authUser , logout} = useAuthStore();
+  const navigate = useNavigate();
+  // console.log(authUser);
+  const handleLogout = async () => {
+    // console.log("Logout clicked");
+    logout();
+  }
   const userDetails = {
-    fullName: "Ishant Garg",
-    email: "ishantgarg270214@gmail.com",
+    fullName: authUser.name,
+    email: authUser.email,
     profilePic: "https://i.pravatar.cc/150?img=3",
     memberSince: "January 2024",
     totalBookings: 12
@@ -32,6 +41,7 @@ const Profile = () => {
               <Button
                 variant="ghost"
                 className="w-full justify-start text-gray-300 hover:bg-gray-800/50"
+                onClick = {() => navigate("/bookings")}
               >
                 <Film className="w-5 h-5 mr-3" />
                 My Bookings
@@ -40,8 +50,9 @@ const Profile = () => {
               <Button
                 variant="ghost"
                 className="w-full justify-start text-red-500 hover:bg-red-500/10"
+                onClick={handleLogout}
               >
-                <LogOut className="w-5 h-5 mr-3" />
+                <LogOut className="w-5 h-5 mr-3"   />
                 Logout
               </Button>
             </div>

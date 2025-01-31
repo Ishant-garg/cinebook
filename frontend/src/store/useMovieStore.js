@@ -6,6 +6,7 @@ const useMovieStore = create((set) => ({
   movieDetails: {}, // New state for holding movie details
   isLoading: false,
   error: null,
+  bookings: [],
 
   // Fetch all movies
   fetchMovies: async () => {
@@ -29,6 +30,17 @@ const useMovieStore = create((set) => ({
       set({ isLoading: false, error: error.message }); // Handle any error that occurs
     }
   },
+
+  fetchAllBookings : async () =>{
+    set({ isLoading: true, error: null }); // Set loading state before making API call
+    try {
+      const response = await axiosInstance.get(`/movie/bookings/`); // Adjust the API endpoint as needed
+      console.log("res" , response.data)
+      set({ bookings: response.data.bookings, isLoading: false }); // Store fetched movie details
+    } catch (error) {
+      set({ isLoading: false, error: error.message }); // Handle any error that occurs
+    }
+  }
 }));
 
 export default useMovieStore;

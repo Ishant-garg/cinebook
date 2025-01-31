@@ -1,7 +1,9 @@
+import Booking from "../models/booking.model.js";
 import Movie from "../models/movie.model.js";
+
 // Create a new movie
 export const createMovie = async (req, res) => {
-    console.log(req.body);
+    // console.log(req.body);
   try {
     const movie = await Movie.create(req.body);
     res.status(201).json({ message: "Movie created successfully", movie });
@@ -63,3 +65,20 @@ export const deleteMovie = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+
+export const getAllBookings = async (req , res) =>{
+   
+  const userId = req.user._id;
+  if(!userId){
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const bookings = await Booking.find({ userId });
+    res.status(200).json({ bookings });
+ 
+  }
+  catch(error){
+    res.status(500).json({ message: "Server error", error: error.message });  
+  }
+}

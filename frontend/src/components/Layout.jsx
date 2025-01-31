@@ -15,7 +15,7 @@ export const Layout = ({ children  }) => {
           <Link to="/" className="text-2xl font-bold text-cinema-red">
             CineBook
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center  gap-4">
             {isAdmin && (
               <Button
                 variant="outline"

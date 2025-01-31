@@ -5,10 +5,13 @@ import authRoute from './routes/authRoute.js'
 import movieRoute from './routes/movieRoute.js'
 import theaterRoute from './routes/theaterRoute.js'
 import showRoute from './routes/showRoute.js'
+import cookieParser from 'cookie-parser'
 dotenv.config()
 import cors from 'cors'
 import { getTheatersByDateAndMovie } from './controllers/theater.controllers.js'
 const app = express()
+app.use(cookieParser());
+
 const port = 3000
 const allowedOrigins = [
   "http://localhost:8080",
@@ -42,6 +45,8 @@ app.use("/api/movie" , movieRoute );
 app.use("/api/theater" , theaterRoute );
 app.use("/api" , showRoute);
 app.get("/api/theaters" , getTheatersByDateAndMovie)
+
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
   connectDB();

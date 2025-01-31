@@ -1,17 +1,17 @@
-import { useState, useEffect } from "react";
+import {  useEffect } from "react";
 import { Button } from "./ui/button";
 import { Accordion, AccordionItem } from "./ui/accordion"; // Use an accordion component
 import useTheaterStore from  "../store/useTheaterStore";
 import { AccordionContent, AccordionTrigger } from "@radix-ui/react-accordion";
-import { MinusCircleIcon, MinusIcon, MinusSquareIcon, Plus, PlusCircleIcon, PlusIcon, X } from "lucide-react";
-import { Navigate, useNavigate } from "react-router-dom";
+import {  Plus, PlusIcon } from "lucide-react";
+import {  useNavigate } from "react-router-dom";
 
 const TheatreList = ({ movieId }) => {
   const {
     theaters,
     showsByTheater,
     selectedDate,
-    isLoading,
+    // isLoading,
     fetchTheatersByDate,
     fetchShowsByTheater,
     setSelectedDate,

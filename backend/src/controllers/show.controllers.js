@@ -1,4 +1,8 @@
 import Theater from "../models/theater.model.js";
+import Stripe from 'stripe';
+const SSK="sk_test_51Q7eKuP6p2babbS7rMbK5al1sXkiZNoEP10jsFKRJZbV3zCd6KMyanzZBBEqGljwnUhheNnfK2xGzYLuJIO2KspI00LSQkvg0G"
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || SSK);   
+
 
 // Create a new show for a theater
 export const createShow = async (req, res) => {
@@ -35,7 +39,7 @@ export const createShow = async (req, res) => {
       seats,  
     };
     
-
+    theater.movies.push(movieId);
     theater.shows.push(newShow); 
     await theater.save();
  
@@ -161,7 +165,7 @@ export const deleteShow = async (req, res) => {
 };
 
 // Get a specific show
-export const getShowById = async (req, res) => {
+export const getShowById = async (req, res) => { 
   try {
     const { showId } = req.params;
 
@@ -249,55 +253,19 @@ export function generateSeats(totalRows, seatsPerRow, seatTypeDistribution) {
   }
   
 
- export const getShowsByCriteria = async (req, res) => {
-    try {
-      const { theaterId, movieId, date } = req.query;
+ 
   
-      // Validate required parameters
-      if (!theaterId || !movieId || !date) {
-        return res.status(400).json({ error: "Theater ID, movie ID, and date are required." });
-      }
-  
-      // Convert the date string to a Date object and extract start/end of the day
-      const startOfDay = new Date(date);
-      startOfDay.setUTCHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setUTCHours(23, 59, 59, 999);
-  
-      // Find the theater by ID and filter shows matching the movieId and showTime range
-      const theater = await Theater.findOne(
-        {
-          _id: theaterId,
-          "shows.movieId": movieId,
-          "shows.showTime": { $gte: startOfDay, $lte: endOfDay },
-        },
-        {
-          "shows.$": 1, // Only include the matching show in the result
-        }
-      );
-  
-      if (!theater || !theater.shows || theater.shows.length === 0) {
-        return res.status(404).json({ error: "No shows found for the given criteria." });
-      }
-  
-      res.status(200).json({ shows: theater.shows });
-    } catch (error) {
-      console.error("Error fetching shows:", error);
-      res.status(500).json({ error: "An error occurred while fetching shows." });
-    }
-  };
-  
-  export const getSeatsByShow = async (req, res) => {
+export const getSeatsByShow = async (req, res) => {
     const { id } = req.params;
  
     try {
       const show = await Show.findById(id).populate('seats');
-      console.log(show);
+      // console.log(show);
       res.status(200).json(show.seats); // Return the seat data for this show
     } catch (error) {
       res.status(500).json({ message: 'Error fetching seats', error });
     }
-  }
+}
 
  
 
@@ -305,23 +273,23 @@ export function generateSeats(totalRows, seatsPerRow, seatTypeDistribution) {
 export const getShowDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id);
-    // return res.status(200).json({ message: 'Show details' });
+    const cleanId = id.trim(); 
+
     const theater = await Theater.findOne({
-      'shows._id': id
+      'shows._id': cleanId
     }).populate('movies');
     
     if (!theater) {
       return res.status(404).json({ message: 'Show not found' });
     }
 
-    const show = theater.shows.id(id);
+    const show = theater.shows.id(cleanId);
     if (!show) {
       return res.status(404).json({ message: 'Show not found' });
     }
 
     const movie = theater.movies.find(m => m._id.equals(show.movieId));
-
+    // console.log("mm " , movie.title);
     res.json({
       id: show._id,
       movieTitle: movie ? movie.title : 'Unknown Movie',
@@ -366,7 +334,7 @@ export const lockSeats = async (req, res) => {
     }
 
     // Lock the seats for 10 seconds
-    const lockExpiry = new Date(Date.now() + 10000); // 10 seconds from now
+    const lockExpiry = new Date(Date.now() + 2 * 60000); 
     requestedSeats.forEach(seat => {
       seat.status = 'locked';
       seat.lockedAt = new Date();
@@ -382,13 +350,12 @@ export const lockSeats = async (req, res) => {
 };
 
 // Release seats
-export const releaseSeats =  async (req, res) => {
+export const releaseSeats = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { seatIds } = req.body;
-    
+    const { id } = req.params; // ID refers to the show ID
+
     const theater = await Theater.findOne({
-      'shows._id': id
+      'shows._id': id,
     });
 
     if (!theater) {
@@ -400,19 +367,335 @@ export const releaseSeats =  async (req, res) => {
       return res.status(404).json({ message: 'Show not found' });
     }
 
-    // Release the seats
-    show.seats.forEach(seat => {
-      if (seatIds.includes(seat._id.toString())) {
+    // Get the current time
+    const currentTime = new Date();
+
+    // Update all locked seats with expired locks
+    show.seats.forEach((seat) => {
+      const lockedUntilTime = seat.lockedUntil ? new Date(seat.lockedUntil).getTime() : null;
+
+      // Debugging logs
+      // console.log(
+      //   `Seat ID: ${seat._id}, LockedUntil: ${seat.lockedUntil}, CurrentTime: ${currentTime}, Comparison: ${
+      //     lockedUntilTime && lockedUntilTime > currentTime.getTime()
+      //   }`
+      // );
+
+      // Only unlock seats if lockedUntil is defined and expired
+      if (seat.status === 'locked' && lockedUntilTime && lockedUntilTime <= currentTime.getTime()) {
+        console.log(`Unlocking Seat ID: ${seat._id}`);
         seat.status = 'available';
         seat.lockedAt = null;
         seat.lockedUntil = null;
+        seat.lockedBy = null;
+      }
+    });
+
+    // Save the updated theater data
+    await theater.save();
+
+    res.json({ message: 'Locked seats with expired locks have been released successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+
+export const reserveSeats = async (req, res) => {
+  try {
+    const { showId } = req.params;
+    const { seatIds } = req.body;
+    const userId = req.user._id; // From auth middleware
+
+    const theater = await Theater.findOne({ 'shows._id': showId });
+    if (!theater) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    const show = theater.shows.id(showId);
+    const currentTime = new Date();
+    const lockUntil = new Date(currentTime.getTime() + 2 * 60000); // 2 minutes
+
+    // Check if seats are available
+    const unavailableSeats = show.seats.filter(
+      seat => seatIds.includes(seat._id.toString()) && 
+      (seat.status !== 'available' || 
+       (seat.status === 'locked' && seat.lockedBy !== userId.toString()))
+    );
+
+    if (unavailableSeats.length > 0) {
+      return res.status(400).json({ 
+        message: 'One or more seats are not available' 
+      });
+    }
+
+    // Lock the seats
+    seatIds.forEach(seatId => {
+      const seat = show.seats.id(seatId);
+      seat.status = 'locked';
+      seat.lockedAt = currentTime;
+      seat.lockedUntil = lockUntil;
+      seat.lockedBy = userId;
+    });
+
+    await theater.save();
+    res.json({ message: 'Seats reserved successfully' });
+  } catch (error) {
+    console.error('Error reserving seats:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+ 
+// Complete Payment and Book Seats
+// export const completePayment = async (req, res) => {
+//   try {
+//     const { showId } = req.params;
+//     const { seatIds } = req.body;
+//     const userId = req.user._id;
+
+//     const theater = await Theater.findOne({ 'shows._id': showId });
+//     if (!theater) {
+//       return res.status(404).json({ message: 'Show not found' });
+//     }
+
+//     const show = theater.shows.id(showId);
+
+//     // Verify seats are locked by this user
+//     const invalidSeats = show.seats.filter(
+//       seat =>
+//         seatIds.includes(seat._id.toString()) &&
+//         (seat.status !== 'locked' || seat.lockedBy !== userId.toString())
+//     );
+
+//     if (invalidSeats.length > 0) {
+//       return res.status(400).json({
+//         message: 'Seats are no longer reserved'
+//       });
+//     }
+
+//     // Mark seats as booked
+//     seatIds.forEach(seatId => {
+//       const seat = show.seats.id(seatId);
+//       seat.status = 'booked';
+//       seat.lockedAt = null;
+//       seat.lockedUntil = null;
+//       seat.lockedBy = userId;
+//     });
+
+//     await theater.save();
+//     res.json({ message: 'Payment completed and seats booked successfully' });
+//   } catch (error) {
+//     console.error('Error completing payment:', error);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// };
+
+// Cancel Payment and Release Seats
+// export const cancelPayment = async (req, res) => {
+//   try {
+//     const { showId } = req.params;
+//     const { seatIds } = req.body;
+//     const userId = req.user._id;
+
+//     const theater = await Theater.findOne({ 'shows._id': showId });
+//     if (!theater) {
+//       return res.status(404).json({ message: 'Show not found' });
+//     }
+
+//     const show = theater.shows.id(showId);
+
+//     // Release only seats locked by this user
+//     seatIds.forEach(seatId => {
+//       const seat = show.seats.id(seatId);
+//       if (seat.status === 'locked' && seat.lockedBy === userId.toString()) {
+//         seat.status = 'available';
+//         seat.lockedAt = null;
+//         seat.lockedUntil = null;
+//         seat.lockedBy = null;
+//       }
+//     });
+
+//     await theater.save();
+//     res.json({ message: 'Seats released successfully' });
+//   } catch (error) {
+//     console.error('Error canceling payment:', error);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// };
+
+
+ // Complete payment and book seats
+ export const  completePayment = async (req, res) => {
+  try {
+    const { showId } = req.params;
+    const { seatIds } = req.body;
+    const userId = req.user._id;
+
+    const theater = await Theater.findOne({ 'shows._id': showId });
+    if (!theater) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    const show = theater.shows.id(showId);
+    
+    // Verify seats are locked by this user
+    const invalidSeats = show.seats.filter(
+      seat => seatIds.includes(seat._id.toString()) && 
+      (seat.status !== 'locked' || seat.lockedBy !== userId.toString())
+    );
+
+    if (invalidSeats.length > 0) {
+      return res.status(400).json({ 
+        message: 'Seats are no longer reserved' 
+      });
+    }
+
+    // Mark seats as booked
+    seatIds.forEach(seatId => {
+      const seat = show.seats.id(seatId);
+      seat.status = 'booked';
+      seat.lockedAt = null;
+      seat.lockedUntil = null;
+      seat.lockedBy = userId;
+    });
+
+    await theater.save();
+    res.json({ message: 'Payment completed and seats booked successfully' });
+  } catch (error) {
+    console.error('Error completing payment:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+// Cancel payment and release seats
+export const cancelPayment = async (req, res) => {
+  try {
+    const { showId } = req.params;
+    const { seatIds } = req.body;
+    const userId = req.user._id;
+
+    const theater = await Theater.findOne({ 'shows._id': showId });
+    if (!theater) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    const show = theater.shows.id(showId);
+
+    // Release only seats locked by this user
+    seatIds.forEach(seatId => {
+      const seat = show.seats.id(seatId);
+      if (seat.status === 'locked' && seat.lockedBy === userId.toString()) {
+        seat.status = 'available';
+        seat.lockedAt = null;
+        seat.lockedUntil = null;
+        seat.lockedBy = null;
       }
     });
 
     await theater.save();
     res.json({ message: 'Seats released successfully' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error canceling payment:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
-};
+}
+
+// Create payment intent for Stripe
+export const createPaymentIntent =  async (req, res) => {
+  try {
+    const { showId } = req.params;
+    const { seatIds } = req.body;
+    const userId = req.user._id;
+
+    const theater = await Theater.findOne({ 'shows._id': showId });
+    if (!theater) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    const show = theater.shows.id(showId);
+    
+    // Verify seats are locked by this user
+    const invalidSeats = show.seats.filter(
+      seat => seatIds.includes(seat._id.toString()) && 
+      (seat.status !== 'locked' || seat.lockedBy !== userId.toString())
+    );
+
+    if (invalidSeats.length > 0) {
+      return res.status(400).json({ 
+        message: 'Seats are no longer reserved' 
+      });
+    }
+
+    // Calculate amount (in cents for Stripe)
+    const amount = seatIds.length * 1150; // $11.50 per seat ($10 + $1.50 fee)
+
+    // Create payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'usd',
+      metadata: {
+        showId,
+        seatIds: JSON.stringify(seatIds),
+        userId: userId.toString()
+      }
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret
+    });
+  } catch (error) {
+    console.error('Error creating payment intent:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+// Handle Stripe webhook
+export const handleStripeWebhook = async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error('Webhook Error:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'payment_intent.succeeded') {
+    const paymentIntent = event.data.object;
+    const { showId, seatIds, userId } = paymentIntent.metadata;
+
+    try {
+      const theater = await Theater.findOne({ 'shows._id': showId });
+      if (!theater) {
+        return res.status(404).json({ message: 'Show not found' });
+      }
+
+      const show = theater.shows.id(showId);
+      const parsedSeatIds = JSON.parse(seatIds);
+
+      // Mark seats as booked
+      parsedSeatIds.forEach(seatId => {
+        const seat = show.seats.id(seatId);
+        if (seat && seat.lockedBy === userId) {
+          seat.status = 'booked';
+          seat.lockedAt = null;
+          seat.lockedUntil = null;
+          seat.lockedBy = userId;
+        }
+      });
+
+      await theater.save();
+    } catch (error) {
+      console.error('Error processing successful payment:', error);
+    }
+  }
+
+  res.json({ received: true });
+}

@@ -175,7 +175,7 @@ const MovieDetails = () => {
           </div>
         </div>
 
-        <TheatreList movieId={id || "1"} />
+        <TheatreList movieId={id } />
       </div>
     </Layout>
   );

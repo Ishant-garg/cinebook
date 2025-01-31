@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 const bookingSchema = new mongoose.Schema(
     {
+      sessionId: { type: String, unique: true, required: true }, // UNIQUE Session ID
+
       userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

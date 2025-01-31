@@ -54,7 +54,7 @@ const comingSoon = [
 ];
 
 const Index = () => {
-  const { movies, isLoading, error, fetchMovies } = useMovieStore();
+  const { movies, isLoading , fetchMovies } = useMovieStore();
 
   useEffect(() => {
     fetchMovies(); // Fetch movies when the component mounts
@@ -81,7 +81,7 @@ const Index = () => {
           <div className="absolute bottom-0 left-0 p-8 space-y-4">
             <h1 className="text-5xl font-bold">Dune: Part Two</h1>
             <p className="text-xl text-gray-200 max-w-2xl">
-              Continue the journey beyond fear in the next chapter of Denis Villeneuve's epic saga.
+              Continue the journey beyond fear in the next chapter of Denis Villeneuve`&apos;`s epic saga.
             </p>
             <Button className="bg-cinema-red hover:bg-red-700">Book Now</Button>
           </div>

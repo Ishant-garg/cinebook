@@ -5,32 +5,65 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import useShowStore from "../store/useShowStore";
+import { useAuthStore } from "../store/useAuthStore"; // Import your custom auth store
+import toast from "react-hot-toast";
 
 const SeatSelection = () => {
   const { id: showId } = useParams();
   const navigate = useNavigate();
-  const { 
+  const { authUser, checkAuth } = useAuthStore();
+
+  // Extract Zustand store actions and state
+  const {
     showDetails,
     selectedSeats,
     fetchShowDetails,
     clearSelection,
+    reserveSeats,
+    releaseLockedSeats,
   } = useShowStore();
 
+  // Check authentication on app load
   useEffect(() => {
-    fetchShowDetails(showId);
-    
-    // Cleanup: release selected seats when leaving
-    return () => {
-      clearSelection();
-    };
-  }, [showId]);
+    checkAuth();
+  }, [checkAuth]);
 
-  const handleProceed = () => {
+  // Fetch show details and release locked seats on component load
+  useEffect(() => {
+    const initialize = async () => {
+      await releaseLockedSeats(showId); // Release expired locked seats
+      await fetchShowDetails(showId); // Fetch show details
+    };
+
+    initialize();
+
+    
+  }, [showId, releaseLockedSeats, fetchShowDetails, clearSelection]);
+
+  const handleProceed = async () => {
     if (selectedSeats.length === 0) {
       return;
     }
-    // Handle payment navigation here
-    navigate(`/payment/${showId}`);
+
+    if (!authUser) {
+      // Save current path to redirect back after login
+      sessionStorage.setItem("redirectAfterLogin", `/shows/${showId}/seats`);
+      toast.error("Please login to continue with booking");
+      navigate("/login");
+      return;
+    }
+
+    // Try to reserve the seats
+    const success = await reserveSeats(showId);
+    console.log('ssssssssssssssssssssss' , success);
+    if (success) {
+      navigate(`/payment/${showId}`);
+    } else {
+      toast.error("Sorry, some seats are no longer available. Please try different seats.");
+      // await releaseLockedSeats(showId); // Ensure expired locked seats are released
+      await fetchShowDetails(showId); // Refresh seat map
+      clearSelection(); // Clear the user's selection
+    }
   };
 
   if (!showDetails) {
