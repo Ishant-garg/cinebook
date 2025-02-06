@@ -1,9 +1,11 @@
 import Theater from "../models/theater.model.js";
 import Stripe from 'stripe';
-const SSK="sk_test_51Q7eKuP6p2babbS7rMbK5al1sXkiZNoEP10jsFKRJZbV3zCd6KMyanzZBBEqGljwnUhheNnfK2xGzYLuJIO2KspI00LSQkvg0G"
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || SSK);   
-
-
+import dotenv from 'dotenv';
+dotenv.config();
+// const SSK="sk_test_51Q7eKuP6p2babbS7rMbK5al1sXkiZNoEP10jsFKRJZbV3zCd6KMyanzZBBEqGljwnUhheNnfK2xGzYLuJIO2KspI00LSQkvg0G"
+// console.log("SSSSSS " , process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);    
+ 
 // Create a new show for a theater
 export const createShow = async (req, res) => {
      
@@ -302,6 +304,48 @@ export const getShowDetails = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+// export const getShowDetails = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const userId = req.user._id;
+ 
+//     const cleanId = id.trim();
+
+//     const theater = await Theater.findOne({
+//       'shows._id': cleanId
+//     }).populate('movies');
+
+//     if (!theater) {
+//       return res.status(404).json({ message: 'Show not found' });
+//     }
+
+//     const show = theater.shows.id(cleanId);
+//     if (!show) {
+//       return res.status(404).json({ message: 'Show not found' });
+//     }
+
+//     const movie = theater.movies.find(m => m._id.equals(show.movieId));
+
+//     // Process seats
+//     const processedSeats = show.seats.map(seat => {
+//       if (seat.lockedBy && seat.lockedBy.toString() === userId) {
+//         return { ...seat.toObject(), status: "selected" }; // Mark as selected for this user
+//       }
+//       return seat; // Keep original status for others
+//     });
+
+//     res.json({
+//       id: show._id,
+//       movieTitle: movie ? movie.title : 'Unknown Movie',
+//       theaterName: theater.name,
+//       showTime: show.showTime,
+//       seats: processedSeats
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
 
 // Lock seats
 export const lockSeats = async (req, res) => {
@@ -699,3 +743,58 @@ export const handleStripeWebhook = async (req, res) => {
 
   res.json({ received: true });
 }
+export const unlockSeat = async (req, res) => {
+  try {
+    const { showId, seatId } = req.body;
+    const userId = req.user._id;  
+
+    // Find the theater with the show
+    const theater = await Theater.findOne({
+      'shows._id': showId
+    });
+
+    if (!theater) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    // Get the show
+    const show = theater.shows.id(showId);
+    if (!show) {
+      return res.status(404).json({ message: 'Show not found' });
+    }
+
+    // Find the seat
+    const seat = show.seats.id(seatId);
+    if (!seat) {
+      return res.status(404).json({ message: 'Seat not found' });
+    }
+
+    // Verify that the seat is locked by the requesting user
+    if (seat.status !== 'locked' || !seat.lockedBy?.equals(userId)) {
+      return res.status(403).json({ 
+        message: 'You can only unlock seats that are locked by you' 
+      });
+    }
+
+    // Update the seat status
+    seat.status = 'available';
+    seat.lockedBy = null;
+    seat.lockedAt = null;
+    seat.lockedUntil = null;
+
+    // Save the changes
+    await theater.save();
+
+    res.json({ 
+      message: 'Seat unlocked successfully',
+      seat: {
+        _id: seat._id,
+        status: seat.status
+      }
+    });
+
+  } catch (error) {
+    console.error('Error unlocking seat:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

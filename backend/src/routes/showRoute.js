@@ -16,6 +16,7 @@ import {
   cancelPayment,
   createPaymentIntent,
   handleStripeWebhook,
+  unlockSeat,
 } from "../controllers/show.controllers.js";
 import { protectRoute } from "../middlewares/auth.middleware.js";
 import Stripe from "stripe";
@@ -26,6 +27,7 @@ dotenv.config();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const router = express.Router();
+router.post("/seats/unlock", protectRoute, unlockSeat);
 
 // Create a new show for a theater
 router.post("/theater/:theaterId/shows", createShow);
@@ -46,7 +48,7 @@ router.get("/theater/:theaterId/shows", getShowsByTheater);
 router.get("/theater/shows/movie/:movieId", getShowsByMovie);
 
 // Get show details
-router.get("/shows/:id", getShowDetails);
+router.get("/shows/:id" , getShowDetails);
 
 // Lock seats
 router.post("/shows/:id/lock-seats", lockSeats);

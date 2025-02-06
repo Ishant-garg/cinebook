@@ -1,15 +1,35 @@
 import mongoose from "mongoose";
 
 // Define the seat schema
+// const seatSchema = new mongoose.Schema({
+//   status: {
+//     type: String,
+//     enum: ['available', 'locked', 'booked'],
+//     default: 'available'
+//   },
+//   lockedAt: Date,
+//   lockedUntil: Date,
+//   lockedBy: String // Add userId for tracking
+// });
 const seatSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['available', 'locked', 'booked'],
     default: 'available'
   },
-  lockedAt: Date,
-  lockedUntil: Date,
-  lockedBy: String // Add userId for tracking
+  lockedAt: {
+    type: Date,
+    default: null
+  },
+  lockedUntil: {
+    type: Date,
+    default: null
+  },
+  lockedBy: {
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User',
+    default: null
+  }
 });
 
 // Define the show schema

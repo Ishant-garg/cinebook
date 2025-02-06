@@ -1,12 +1,12 @@
 import express from 'express'
 import dotenv from 'dotenv'
+dotenv.config()
 import { connectDB } from './lib/db.js'
 import authRoute from './routes/authRoute.js'
 import movieRoute from './routes/movieRoute.js'
 import theaterRoute from './routes/theaterRoute.js'
 import showRoute from './routes/showRoute.js'
 import cookieParser from 'cookie-parser'
-dotenv.config()
 import cors from 'cors'
 import { getTheatersByDateAndMovie } from './controllers/theater.controllers.js'
 const app = express()

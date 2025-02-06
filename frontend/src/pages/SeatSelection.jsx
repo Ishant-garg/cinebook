@@ -55,7 +55,7 @@ const SeatSelection = () => {
 
     // Try to reserve the seats
     const success = await reserveSeats(showId);
-    console.log('ssssssssssssssssssssss' , success);
+    // console.log('ssssssssssssssssssssss' , success);
     if (success) {
       navigate(`/payment/${showId}`);
     } else {

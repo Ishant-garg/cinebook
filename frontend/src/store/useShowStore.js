@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import axiosInstance from '../lib/axios';
 import toast from 'react-hot-toast';
-
+ 
 const useShowStore = create((set, get) => ({
   showDetails: null,
   selectedSeats: [],
@@ -127,6 +127,18 @@ const useShowStore = create((set, get) => ({
       toast.error('Failed to release locked seats');
     } finally {
       set({ isLoading: false });
+    }
+  },
+  unlockSeat : async (showId, seatId) => {
+    try {
+      const response = await axiosInstance.post(`/seats/unlock`, { seatId , showId}); 
+      if (response.status === 200) {
+        toast.success('Seat unlocked successfully.');
+        await get().fetchShowDetails(showId);
+      }
+    } catch (error) {
+      console.error('Error unlocking seat:', error);
+      toast.error('Failed to unlock seat');
     }
   },
 
