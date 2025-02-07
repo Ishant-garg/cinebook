@@ -14,8 +14,11 @@ app.use(cookieParser());
 
 const port = process.env.PORT || 3000
 const allowedOrigins = [
-  "http://localhost:8080" || process.env.DASHBOARD_URL,
-  "http://localhost:5173" || process.env.CLIENT_URL,
+  "http://localhost:8080"  ,
+  "http://localhost:5173" ,
+  process.env.CLIENT_URL,
+  process.env.DASHBOARD_URL
+
 ];
 
 app.use(
