@@ -20,8 +20,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://cinebook-git-main-ishantgargs-projects.vercel.app",
   "https://cinebook-blond.vercel.app",
-  process.env.CLIENT_URL,
-  process.env.DASHBOARD_URL
+  "https://cinebook-dashboard.vercel.app/"
 ].filter(Boolean); // Remove any undefined values
 
 // Improved CORS configuration
