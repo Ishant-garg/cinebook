@@ -15,9 +15,9 @@ const Payment = () => {
 
   const {authUser} = useAuthStore();
   // console.log("Auth user:", authUser);
-  // const sss = selectedSeats;
-  
-  // console.log("Selected seats:", selectedSeats);
+  const sss = selectedSeats;
+    
+  console.log("Selected seats:", selectedSeats);
 
   useEffect(() => {
     const validateAndFetchShowDetails = async () => {
