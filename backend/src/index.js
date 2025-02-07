@@ -16,6 +16,8 @@ const port = process.env.PORT || 3000
 const allowedOrigins = [
   "http://localhost:8080"  ,
   "http://localhost:5173" ,
+  "https://cinebook-git-main-ishantgargs-projects.vercel.app/",
+  "https://cinebook-blond.vercel.app/",
   process.env.CLIENT_URL,
   process.env.DASHBOARD_URL
 
