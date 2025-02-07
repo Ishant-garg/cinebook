@@ -12,16 +12,16 @@ import { getTheatersByDateAndMovie } from './controllers/theater.controllers.js'
 const app = express()
 app.use(cookieParser());
 
-const port = 3000
+const port = process.env.PORT || 3000
 const allowedOrigins = [
-  "http://localhost:8080",
-  "http://localhost:5173",
+  "http://localhost:8080" || process.env.DASHBOARD_URL,
+  "http://localhost:5173" || process.env.CLIENT_URL,
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g., mobile apps or Postman)
+      
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -30,7 +30,7 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true, // Allow credentials (cookies)
+    credentials: true,  
   })
 );
  // Allows all origins (use with caution)

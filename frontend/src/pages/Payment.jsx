@@ -10,14 +10,14 @@ import { useAuthStore } from "../store/useAuthStore";
 const Payment = () => {
   const { showId } = useParams();
   const navigate = useNavigate();
-  const { showDetails, selectedSeats, fetchShowDetails, clearSelection } =
+  const { showDetails, selectedSeats, fetchShowDetails  } =
   useShowStore();
 
   const {authUser} = useAuthStore();
-  console.log("Auth user:", authUser);
-  const sss = selectedSeats;
+  // console.log("Auth user:", authUser);
+  // const sss = selectedSeats;
   
-  console.log("Selected seats:", selectedSeats);
+  // console.log("Selected seats:", selectedSeats);
 
   useEffect(() => {
     const validateAndFetchShowDetails = async () => {
