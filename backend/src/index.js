@@ -20,19 +20,16 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://cinebook-git-main-ishantgargs-projects.vercel.app",
   "https://cinebook-blond.vercel.app",
-  "https://cinebook-dashboard.vercel.app/"
-].filter(Boolean); // Remove any undefined values
+  "https://cinebook-dashboard.vercel.app"
+].filter(Boolean);
 
-// Improved CORS configuration
+// CORS configuration
 app.use(cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Remove any trailing slashes from the origin
-    const normalizedOrigin = origin.replace(/\/$/, '');
-    
-    if (allowedOrigins.includes(normalizedOrigin)) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -40,8 +37,12 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Set-Cookie']
 }));
+
+// Pre-flight requests
+app.options('*', cors());
 
 // Health check route
 app.get('/', (req, res) => {
